@@ -15,7 +15,7 @@ class PurchaseOrderInherit(models.Model):
 class PurchaseOrderLineInherit(models.Model):
     _inherit = 'purchase.order.line'
 
-    discount = fields.Float(
+    discount_purchase = fields.Float(
         string='Discount (%)',
         compute='_compute_discount_from_order',
         store=True,  # Store the computed value for better performance
@@ -27,14 +27,14 @@ class PurchaseOrderLineInherit(models.Model):
     def _compute_discount_from_order(self):
         """Compute discount from the order's global descent type"""
         for line in self:
-            line.discount = line.order_id.global_descent_type or 0.0
+            line.discount_purchase = line.order_id.global_descent_type or 0.0
 
     @api.depends('product_id', 'price_unit', 'taxes_id', 'discount', 'product_qty')
     def _compute_amount(self):
         """Override amount computation to include discount"""
         for line in self:
             # Apply discount to the base price
-            discounted_price = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
+            discounted_price = line.price_unit * (1 - (line.discount_purchase or 0.0) / 100.0)
 
             # Compute taxes on the discounted price
             taxes = line.taxes_id.compute_all(
@@ -50,4 +50,5 @@ class PurchaseOrderLineInherit(models.Model):
                 'price_tax': sum(t.get('amount', 0.0) for t in taxes.get('taxes', [])),
                 'price_total': taxes['total_included'],
                 'price_subtotal': taxes['total_excluded'],
+
             })
